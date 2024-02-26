@@ -1,0 +1,53 @@
+pip install pandas
+# must have maketable4.dta loaded into your local python environment or else python will not be able to path to the file 
+import pandas as pd
+
+# Read the old .dta file
+old_file_path = 'maketable4.dta'
+df = pd.read_stata(old_file_path)
+
+# Save as the new version
+new_file_path1 = "maketable4.dta"
+df.to_stata(new_file_path1, write_index=False)
+
+print("File updated successfully!")
+data_table_4 = pd.read_stata(new_file_path1)
+print(data_table_4)
+pip install linearmodels
+from linearmodels.iv import IV2SLS
+from linearmodels.panel import PanelOLS
+import pandas as pd
+
+# Remove rows with null values in 'avexpr', 'logpgp95', 'logem4', and 'loghjypl' variables
+data_table_4 = data_table_4.dropna(subset=['avexpr', 'logpgp95', 'logem4', 'loghjypl'])
+
+# Panels A and B, IV Regressions
+# Columns 1 - 2 (Base Sample)
+model1 = IV2SLS.from_formula('logpgp95 ~ 1 + [avexpr ~ logem4]', data=data_table_4).fit()
+model2 = IV2SLS.from_formula('logpgp95 ~ 1 + lat_abst + [avexpr ~ logem4]', data=data_table_4).fit()
+
+# Columns 3 - 4 (Base Sample w/o Neo-Europes)
+model3 = IV2SLS.from_formula('logpgp95 ~ 1 + [avexpr ~ logem4]', data=data_table_4[data_table_4['rich4'] != 1]).fit()
+model4 = IV2SLS.from_formula('logpgp95 ~ 1 + lat_abst + [avexpr ~ logem4]', data=data_table_4[data_table_4['rich4'] != 1]).fit()
+
+# Columns 5 - 6 (Base Sample w/o Africa)
+model5 = IV2SLS.from_formula('logpgp95 ~ 1 + [avexpr ~ logem4]', data=data_table_4[data_table_4['africa'] != 1]).fit()
+model6 = IV2SLS.from_formula('logpgp95 ~ 1 + lat_abst + [avexpr ~ logem4]', data=data_table_4[data_table_4['africa'] != 1]).fit()
+
+# Columns 7 - 8 (Base Sample with continent dummies)
+data_table_4['other_cont'] = data_table_4['shortnam'].isin(['AUS', 'MLT', 'NZL']).astype(int)
+model7 = IV2SLS.from_formula('logpgp95 ~ 1 + africa + asia + other_cont + [avexpr ~ logem4]', data=data_table_4).fit()
+model8 = IV2SLS.from_formula('logpgp95 ~ 1 + lat_abst + africa + asia + other_cont + [avexpr ~ logem4]', data=data_table_4).fit()
+
+# Column 9 (Base Sample, log GDP per worker)
+model9 = IV2SLS.from_formula('loghjypl ~ 1 + [avexpr ~ logem4]', data=data_table_4).fit()
+
+print(model1)
+print(model2)
+print(model3)
+print(model4)
+print(model5)
+print(model6)
+print(model7)
+print(model8)
+print(model9)
